@@ -64,6 +64,11 @@ real `config.env`:
 - `ubuntu_hyper_v` — a Hyper-V VM, started/stopped via SSH into the Windows
   host running PowerShell `Start-VM`/`Stop-VM` (a VM has no MAC of its own to
   send a magic packet to).
+- `rustdesk` — not a whole machine, but a single Windows service
+  (`RustDesk`), started/stopped/queried via SSH + PowerShell
+  `Start-Service`/`Stop-Service`/`Get-Service`. Demonstrates that a "target"
+  can be anything scriptable over SSH, not just machine power — the SSH
+  account needs local admin rights on Windows to control services.
 
 To add a target: copy one of the examples into `rws_server/targets/<name>/`,
 rename `sample_config.env` to `config.env`, fill in the real values, and
