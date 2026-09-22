@@ -5,6 +5,7 @@ import aiohttp
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 try:
@@ -12,7 +13,13 @@ try:
 except ImportError:  # Home Assistant < 2024.11
     from homeassistant.components.zeroconf import ZeroconfServiceInfo
 
-from .const import DEFAULT_PORT, DOMAIN
+from .const import (
+    CONF_POLL_INTERVAL,
+    DEFAULT_PORT,
+    DEFAULT_POLL_INTERVAL,
+    DOMAIN,
+    MIN_POLL_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +30,11 @@ class RemoteWakeSleepConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._discovered_host: str | None = None
         self._discovered_port: int = DEFAULT_PORT
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> "RemoteWakeSleepOptionsFlow":
+        return RemoteWakeSleepOptionsFlow(config_entry)
 
     async def _validate_connection(self, host: str, port: int) -> None:
         session = async_get_clientsession(self.hass)
@@ -79,3 +91,22 @@ class RemoteWakeSleepConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="zeroconf_confirm",
             description_placeholders={"host": self._discovered_host},
         )
+
+
+class RemoteWakeSleepOptionsFlow(config_entries.OptionsFlow):
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        current = self.config_entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_POLL_INTERVAL, default=current): vol.All(
+                    vol.Coerce(int), vol.Range(min=MIN_POLL_INTERVAL)
+                ),
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=data_schema)

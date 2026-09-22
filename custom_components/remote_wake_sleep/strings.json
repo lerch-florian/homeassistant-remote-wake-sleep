@@ -20,5 +20,15 @@
       "already_configured": "This server is already configured.",
       "cannot_connect": "Failed to connect to the server."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Remote Wake/Sleep options",
+        "data": {
+          "poll_interval": "Poll interval (seconds)"
+        }
+      }
+    }
   }
 }

@@ -1,3 +1,7 @@
 DOMAIN = "remote_wake_sleep"
 DEFAULT_PORT = 5000
 ZEROCONF_SERVICE_TYPE = "_rws._tcp.local."
+
+CONF_POLL_INTERVAL = "poll_interval"
+DEFAULT_POLL_INTERVAL = 30
+MIN_POLL_INTERVAL = 5

@@ -16,12 +16,12 @@ REQUEST_TIMEOUT = 10
 
 
 class RemoteWakeSleepCoordinator(DataUpdateCoordinator[dict[str, str]]):
-    def __init__(self, hass: HomeAssistant, host: str, port: int) -> None:
+    def __init__(self, hass: HomeAssistant, host: str, port: int, poll_interval: int) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=30),
+            update_interval=timedelta(seconds=poll_interval),
         )
         self._host = host
         self._port = port
