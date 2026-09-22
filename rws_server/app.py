@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TARGETS_DIR = os.path.join(BASE_DIR, 'targets')
 REQUIRED_SCRIPTS = ['wake-up.sh', 'go-sleep.sh', 'check-status.sh']
 
-ZEROCONF_SERVICE_TYPE = '_remote-wake-sleep._tcp.local.'
+ZEROCONF_SERVICE_TYPE = '_rws._tcp.local.'
 SERVICE_PORT = 5000
 
 discovered_targets = []
