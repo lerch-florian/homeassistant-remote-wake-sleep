@@ -6,7 +6,11 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+
+try:
+    from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+except ImportError:  # Home Assistant < 2024.11
+    from homeassistant.components.zeroconf import ZeroconfServiceInfo
 
 from .const import DEFAULT_PORT, DOMAIN
 
