@@ -65,9 +65,21 @@ def list_targets():
     return {'targets': discovered_targets}
 
 
+def get_local_ip():
+    # socket.gethostbyname(hostname) can resolve to a /etc/hosts loopback
+    # alias (e.g. 127.0.1.1 on Debian) instead of the actual LAN address, so
+    # determine it via a UDP socket connected to an external address instead.
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        return s.getsockname()[0]
+    finally:
+        s.close()
+
+
 def advertise_zeroconf():
     hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
+    local_ip = get_local_ip()
     info = ServiceInfo(
         ZEROCONF_SERVICE_TYPE,
         f'{hostname}.{ZEROCONF_SERVICE_TYPE}',
