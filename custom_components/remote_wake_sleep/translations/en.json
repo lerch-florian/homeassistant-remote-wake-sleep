@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Remote Wake/Sleep server",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Discovered Remote Wake/Sleep server",
+        "description": "Set up the Remote Wake/Sleep server found at {host}?"
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the server."
+    },
+    "abort": {
+      "already_configured": "This server is already configured.",
+      "cannot_connect": "Failed to connect to the server."
+    }
+  }
+}
