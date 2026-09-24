@@ -77,6 +77,13 @@ between them changes (`/targets`, `/<target>/wake-up`, `/<target>/go-sleep`,
   (used verbatim as the HA sensor state and as the substring match
   `"up" in status.lower()` in `switch.py`'s `is_on`).
 
+- `check-status.sh` must return quickly, including when the target is asleep
+  or unreachable: any `ssh` in it needs `-o ConnectTimeout=3`. `app.py`
+  enforces a hard `STATUS_TIMEOUT` (8s, reports `server is down`) as a
+  backstop, and the HA coordinator polls targets in parallel and tolerates
+  a single failed target. Before this, one hanging status check (a sleeping
+  PC) exceeded HA's 10s request timeout and made *every* entity Unavailable.
+
 ## Testing changes locally
 
 There's no test suite. What was actually used during development:

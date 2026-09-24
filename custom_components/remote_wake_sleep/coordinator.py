@@ -13,6 +13,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 10
+ACTION_TIMEOUT = 30
 
 
 class RemoteWakeSleepCoordinator(DataUpdateCoordinator[dict[str, str]]):
@@ -37,25 +38,29 @@ class RemoteWakeSleepCoordinator(DataUpdateCoordinator[dict[str, str]]):
                 resp.raise_for_status()
                 return await resp.json()
 
+    async def _get_status(self, target: str) -> str:
+        try:
+            return (await self._get_json(f"/{target}/get-status")).get("status", "unknown")
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            _LOGGER.warning("Status check for %s failed: %r", target, err)
+            return "unknown"
+
     async def _async_update_data(self) -> dict[str, str]:
         try:
-            targets_response = await self._get_json("/targets")
-            targets = targets_response.get("targets", [])
-
-            data: dict[str, str] = {}
-            for target in targets:
-                status_response = await self._get_json(f"/{target}/get-status")
-                data[target] = status_response.get("status", "unknown")
-            return data
+            targets = (await self._get_json("/targets")).get("targets", [])
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-            raise UpdateFailed(f"Error communicating with server: {err}") from err
+            raise UpdateFailed(f"Error communicating with server: {err!r}") from err
+
+        # One slow or failing target must not make every other target unavailable.
+        statuses = await asyncio.gather(*(self._get_status(t) for t in targets))
+        return dict(zip(targets, statuses))
 
     async def async_wake_up(self, target: str) -> None:
-        async with asyncio.timeout(REQUEST_TIMEOUT):
+        async with asyncio.timeout(ACTION_TIMEOUT):
             async with self._session.get(f"{self.base_url}/{target}/wake-up") as resp:
                 resp.raise_for_status()
 
     async def async_go_sleep(self, target: str) -> None:
-        async with asyncio.timeout(REQUEST_TIMEOUT):
+        async with asyncio.timeout(ACTION_TIMEOUT):
             async with self._session.get(f"{self.base_url}/{target}/go-sleep") as resp:
                 resp.raise_for_status()

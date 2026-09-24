@@ -1,4 +1,5 @@
 import os
+import signal
 import socket
 import subprocess
 
@@ -14,31 +15,41 @@ REQUIRED_SCRIPTS = ['wake-up.sh', 'go-sleep.sh', 'check-status.sh']
 ZEROCONF_SERVICE_TYPE = '_rws._tcp.local.'
 SERVICE_PORT = 5000
 
+STATUS_TIMEOUT = 8
+ACTION_TIMEOUT = 25
+
 discovered_targets = []
 
 
-def run_script(target_dir, script_name):
-    subprocess.run(['bash', script_name], cwd=target_dir)
-
-
-def run_script_capture(target_dir, script_name):
-    result = subprocess.run(['bash', script_name], cwd=target_dir, stdout=subprocess.PIPE, text=True)
-    return result.stdout.strip()
+def run_script(target_dir, script_name, timeout):
+    """Run a target script; returns its stdout, or None if it timed out."""
+    # Own process group so a hung ssh child is killed along with bash.
+    proc = subprocess.Popen(
+        ['bash', script_name], cwd=target_dir, stdout=subprocess.PIPE, text=True, start_new_session=True
+    )
+    try:
+        out, _ = proc.communicate(timeout=timeout)
+        return out.strip()
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
+        return None
 
 
 def register_target(target_name):
     target_dir = os.path.join(TARGETS_DIR, target_name)
 
     def wake_up():
-        run_script(target_dir, 'wake-up.sh')
+        run_script(target_dir, 'wake-up.sh', ACTION_TIMEOUT)
         return {}
 
     def go_sleep():
-        run_script(target_dir, 'go-sleep.sh')
+        run_script(target_dir, 'go-sleep.sh', ACTION_TIMEOUT)
         return {}
 
     def get_status():
-        return {'status': run_script_capture(target_dir, 'check-status.sh')}
+        status = run_script(target_dir, 'check-status.sh', STATUS_TIMEOUT)
+        return {'status': status if status is not None else 'server is down'}
 
     app.add_url_rule(f'/{target_name}/wake-up', f'{target_name}_wake_up', wake_up)
     app.add_url_rule(f'/{target_name}/go-sleep', f'{target_name}_go_sleep', go_sleep)
